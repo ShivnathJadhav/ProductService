@@ -1,9 +1,6 @@
 package com.SpringBootProject.productservice.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +8,7 @@ import lombok.Setter;
 
 import java.util.UUID;
 
-@Entity
+@Entity (name = "product")
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -19,7 +16,9 @@ public class Product {
     private String name;
     private Double price;
     private String description;
-    private String category;
+    @ManyToOne (fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     public UUID getId() {
         return id;
@@ -53,11 +52,11 @@ public class Product {
         this.description = description;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
 }

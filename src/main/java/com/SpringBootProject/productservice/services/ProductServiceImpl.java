@@ -4,7 +4,10 @@ import com.SpringBootProject.productservice.dtos.CreateProductRequestDto;
 import com.SpringBootProject.productservice.exceptions.BadRequestException;
 import com.SpringBootProject.productservice.exceptions.ProductNotFoundException;
 import com.SpringBootProject.productservice.exceptions.ProductsNotFoundException;
+import com.SpringBootProject.productservice.models.Category;
 import com.SpringBootProject.productservice.models.Product;
+import com.SpringBootProject.productservice.projections.ProductInfo;
+import com.SpringBootProject.productservice.repositories.CategoryRepository;
 import com.SpringBootProject.productservice.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,9 +18,17 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService{
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Override
     public Product getProductByName(String name) throws ProductNotFoundException {
+
+        // demo to validate the projection
+        ProductInfo productInfo = productRepository.findProductInfoByName(name);
+        System.out.println("Product Info: " + productInfo.getDescription() +
+                ", " + productInfo.getName() + ", " + productInfo.getPrice());
+
         if(name == null || name.isEmpty()) {
             throw new ProductNotFoundException("Product with Name " + name + " not found.");
         }
@@ -62,10 +73,20 @@ public class ProductServiceImpl implements ProductService{
         }
         Product newProduct = new Product();
         newProduct.setName(createProductRequestDto.getName());
-        newProduct.setCategory(createProductRequestDto.getCategory());
         newProduct.setPrice(createProductRequestDto.getPrice());
         newProduct.setDescription(createProductRequestDto.getDescription());
+
+        String categoryName = createProductRequestDto.getCategory();
+        Category category = categoryRepository.findByName(categoryName);
+        if (category == null) {
+            category = new Category();
+            category.setName(categoryName);
+            categoryRepository.save(category);
+        }
+        newProduct.setCategory(category);
+
         productRepository.save(newProduct);
+
         return newProduct;
     }
 
@@ -79,9 +100,18 @@ public class ProductServiceImpl implements ProductService{
             throw new ProductNotFoundException("Product with Name " + createProductRequestDto.getName() + " and Category " + createProductRequestDto.getCategory() + " not found.");
         }
         existingProduct.setName(createProductRequestDto.getName());
-        existingProduct.setCategory(createProductRequestDto.getCategory());
         existingProduct.setPrice(createProductRequestDto.getPrice());
         existingProduct.setDescription(createProductRequestDto.getDescription());
+
+        String categoryName = createProductRequestDto.getCategory();
+        Category cat = categoryRepository.findByName(categoryName);
+        if (cat == null) {
+            cat = new Category();
+            cat.setName(categoryName);
+            categoryRepository.save(cat);
+        }
+
+        existingProduct.setCategory(cat);
         productRepository.save(existingProduct);
         return existingProduct;
     }
@@ -102,8 +132,8 @@ public class ProductServiceImpl implements ProductService{
         if(createProductRequestDto.getName() != null && !createProductRequestDto.getName().isEmpty() && !createProductRequestDto.getName().equals(existingProduct.getName())) {
             existingProduct.setName(createProductRequestDto.getName());
         }
-        if(createProductRequestDto.getCategory() != null && !createProductRequestDto.getCategory().isEmpty() && !createProductRequestDto.getCategory().equals(existingProduct.getCategory())) {
-            existingProduct.setCategory(createProductRequestDto.getCategory());
+        if(createProductRequestDto.getCategory() != null && !createProductRequestDto.getCategory().isEmpty() && !createProductRequestDto.getCategory().equals(existingProduct.getCategory().getName())) {
+            existingProduct.setCategory(categoryRepository.findByName(createProductRequestDto.getCategory()));
         }
         productRepository.save(existingProduct);
         return existingProduct;
